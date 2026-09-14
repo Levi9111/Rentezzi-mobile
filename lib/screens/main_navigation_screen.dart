@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/services/haptic_service.dart';
 import '../providers/app_provider.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'properties/properties_screen.dart';
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _onNavigateTab(int index) {
+    HapticService.selection();
     setState(() {
       _currentIndex = index;
     });
@@ -55,7 +57,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, -3),
             ),
@@ -63,7 +65,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: (index) {
+            HapticService.selection();
+            setState(() => _currentIndex = index);
+          },
           type: BottomNavigationBarType.fixed,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
