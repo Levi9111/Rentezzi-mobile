@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/haptic_service.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/elder_button.dart';
 import '../../widgets/elder_text_field.dart';
+import '../../widgets/emergency_sheet.dart';
 import '../auth/login_screen.dart';
+import '../tools/rent_calculator_screen.dart';
 import 'legal_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   void _showEditNameDialog(BuildContext context, AuthProvider auth, AppProvider app) {
+    HapticService.selection();
     final controller = TextEditingController(text: auth.user?.name ?? '');
 
     showDialog(
@@ -32,12 +36,16 @@ class SettingsScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(app.tr('cancel'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.trim().isEmpty) return;
+              HapticService.medium();
               Navigator.pop(ctx);
               await auth.updateName(controller.text.trim());
             },
@@ -49,6 +57,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showLogoutConfirm(BuildContext context, AuthProvider auth, AppProvider app) {
+    HapticService.selection();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -65,11 +74,15 @@ class SettingsScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(app.tr('cancel'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
           ElevatedButton(
             onPressed: () async {
+              HapticService.heavy();
               Navigator.pop(ctx);
               await auth.logout();
               if (context.mounted) {
@@ -98,7 +111,7 @@ class SettingsScreen extends StatelessWidget {
     final isDark = app.isDarkMode;
 
     final userName = auth.user?.name ?? app.tr('addYourName');
-    final userPhone = auth.user?.phone ?? '—';
+    final userPhone = auth.user?.phone ?? '';
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
@@ -111,11 +124,11 @@ class SettingsScreen extends StatelessWidget {
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 18 * fontScale, vertical: 14 * fontScale),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Landlord Profile Card
+            // User Profile Header Card
             Container(
-              padding: EdgeInsets.all(18 * fontScale),
+              padding: EdgeInsets.all(16 * fontScale),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -128,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28 * fontScale,
-                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                     child: Icon(
                       Icons.person,
                       size: 32 * fontScale,
@@ -180,7 +193,7 @@ class SettingsScreen extends StatelessWidget {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: app.isElderMode,
-                  activeColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary,
                   title: Text(
                     app.tr('elderMode'),
                     style: TextStyle(
@@ -195,7 +208,41 @@ class SettingsScreen extends StatelessWidget {
                       color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                     ),
                   ),
-                  onChanged: (_) => app.toggleElderMode(),
+                  onChanged: (_) {
+                    HapticService.selection();
+                    app.toggleElderMode();
+                  },
+                ),
+                const Divider(height: 16),
+                // Haptic Feedback Switch
+                StatefulBuilder(
+                  builder: (context, setLocalState) {
+                    return SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: HapticService.enabled,
+                      activeTrackColor: AppColors.primary,
+                      title: Text(
+                        app.tr('hapticFeedback'),
+                        style: TextStyle(
+                          fontSize: 16 * fontScale,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        app.tr('hapticFeedbackDesc'),
+                        style: TextStyle(
+                          fontSize: 13 * fontScale,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setLocalState(() {
+                          HapticService.enabled = val;
+                        });
+                        if (val) HapticService.success();
+                      },
+                    );
+                  },
                 ),
                 const Divider(height: 16),
                 Text(
@@ -211,6 +258,70 @@ class SettingsScreen extends StatelessWidget {
                     SizedBox(width: 8 * fontScale),
                     _buildScaleOption(app, 1.35, app.tr('extraLarge'), fontScale),
                   ],
+                ),
+              ],
+            ),
+
+            SizedBox(height: 16 * fontScale),
+
+            // Quick Tools & Utilities Card
+            _buildCard(
+              title: app.isBengali ? 'সহজ টুলস ও হেল্পলাইন' : 'Quick Tools & Utilities',
+              icon: Icons.construction_rounded,
+              isDark: isDark,
+              fontScale: fontScale,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.calculate_outlined, color: AppColors.primary),
+                  ),
+                  title: Text(
+                    app.tr('rentCalculator'),
+                    style: TextStyle(fontSize: 15.5 * fontScale, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    app.tr('rentCalculatorSubtitle'),
+                    style: TextStyle(fontSize: 12 * fontScale, color: Colors.grey),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    HapticService.selection();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RentCalculatorScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.warning),
+                  ),
+                  title: Text(
+                    app.tr('emergencyHelplines'),
+                    style: TextStyle(fontSize: 15.5 * fontScale, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    app.tr('emergencyHelplinesSubtitle'),
+                    style: TextStyle(fontSize: 12 * fontScale, color: Colors.grey),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    HapticService.selection();
+                    EmergencyHelplineSheet.show(context);
+                  },
                 ),
               ],
             ),
@@ -237,7 +348,10 @@ class SettingsScreen extends StatelessWidget {
                         label: Center(child: Text(app.tr('bangla'))),
                         selected: app.isBengali,
                         onSelected: (val) {
-                          if (val) app.setLanguage('bn');
+                          if (val) {
+                            HapticService.selection();
+                            app.setLanguage('bn');
+                          }
                         },
                       ),
                     ),
@@ -247,7 +361,10 @@ class SettingsScreen extends StatelessWidget {
                         label: Center(child: Text(app.tr('english'))),
                         selected: !app.isBengali,
                         onSelected: (val) {
-                          if (val) app.setLanguage('en');
+                          if (val) {
+                            HapticService.selection();
+                            app.setLanguage('en');
+                          }
                         },
                       ),
                     ),
@@ -268,7 +385,10 @@ class SettingsScreen extends StatelessWidget {
                         label: Center(child: Text(app.tr('light'))),
                         selected: !app.isDarkMode,
                         onSelected: (val) {
-                          if (val) app.setThemeMode(ThemeMode.light);
+                          if (val) {
+                            HapticService.selection();
+                            app.setThemeMode(ThemeMode.light);
+                          }
                         },
                       ),
                     ),
@@ -278,7 +398,10 @@ class SettingsScreen extends StatelessWidget {
                         label: Center(child: Text(app.tr('dark'))),
                         selected: app.isDarkMode,
                         onSelected: (val) {
-                          if (val) app.setThemeMode(ThemeMode.dark);
+                          if (val) {
+                            HapticService.selection();
+                            app.setThemeMode(ThemeMode.dark);
+                          }
                         },
                       ),
                     ),
@@ -305,6 +428,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
+                    HapticService.selection();
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => LegalScreen(title: app.tr('privacyPolicy'), isPrivacy: true),
@@ -322,6 +446,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
+                    HapticService.selection();
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => LegalScreen(title: app.tr('termsOfService'), isPrivacy: false),
@@ -352,31 +477,9 @@ class SettingsScreen extends StatelessWidget {
               backgroundColor: AppColors.destructive,
               onPressed: () => _showLogoutConfirm(context, auth, app),
             ),
-
-            SizedBox(height: 32 * fontScale),
+            SizedBox(height: 24 * fontScale),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildScaleOption(AppProvider app, double scale, String label, double fontScale) {
-    final isSelected = (app.fontScale - scale).abs() < 0.05;
-    return Expanded(
-      child: ChoiceChip(
-        label: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5 * fontScale,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-            ),
-          ),
-        ),
-        selected: isSelected,
-        onSelected: (val) {
-          if (val) app.setFontScale(scale);
-        },
       ),
     );
   }
@@ -389,7 +492,8 @@ class SettingsScreen extends StatelessWidget {
     required List<Widget> children,
   }) {
     return Container(
-      padding: EdgeInsets.all(18 * fontScale),
+      width: double.infinity,
+      padding: EdgeInsets.all(16 * fontScale),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -408,7 +512,7 @@ class SettingsScreen extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 17 * fontScale,
+                  fontSize: 16.5 * fontScale,
                   fontWeight: FontWeight.w800,
                   color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                 ),
@@ -418,6 +522,30 @@ class SettingsScreen extends StatelessWidget {
           const Divider(height: 20),
           ...children,
         ],
+      ),
+    );
+  }
+
+  Widget _buildScaleOption(AppProvider app, double scale, String label, double fontScale) {
+    final isSelected = (app.fontScale - scale).abs() < 0.05;
+    return Expanded(
+      child: ChoiceChip(
+        label: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13 * fontScale,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+            ),
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (val) {
+          if (val) {
+            HapticService.selection();
+            app.setFontScale(scale);
+          }
+        },
       ),
     );
   }
