@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/haptic_service.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/receipt_provider.dart';
+import '../../widgets/achievement_card.dart';
 import '../../widgets/elder_button.dart';
+import '../../widgets/emergency_sheet.dart';
+import '../../widgets/greeting_banner.dart';
 import '../../widgets/receipt_card.dart';
 import '../../widgets/stat_card.dart';
+import '../tools/rent_calculator_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -34,28 +39,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     context.read<PropertyProvider>().fetchVacancySummary();
   }
 
-  String _getGreeting(AppProvider app) {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return app.tr('goodMorning');
-    } else if (hour < 17) {
-      return app.tr('goodAfternoon');
-    } else {
-      return app.tr('goodEvening');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppProvider>();
-    final auth = context.watch<AuthProvider>();
     final receipts = context.watch<ReceiptProvider>();
     final properties = context.watch<PropertyProvider>();
     final fontScale = app.fontScale;
     final isDark = app.isDarkMode;
-
-    final landlordName = auth.user?.name ?? app.tr('landlordInfo');
-    final greeting = _getGreeting(app);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
@@ -65,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
+                color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.receipt_long, color: AppColors.primary, size: 22),
@@ -96,9 +86,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: AppColors.primary,
                 ),
               ),
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-              onPressed: () => app.toggleLanguage(),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+              onPressed: () {
+                HapticService.selection();
+                app.toggleLanguage();
+              },
             ),
           ),
           IconButton(
@@ -107,7 +100,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               size: 22 * fontScale,
             ),
             tooltip: app.tr('theme'),
-            onPressed: () => app.toggleTheme(),
+            onPressed: () {
+              HapticService.selection();
+              app.toggleTheme();
+            },
           ),
           SizedBox(width: 4 * fontScale),
         ],
@@ -121,20 +117,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Banner
+              // Dynamic Time-of-Day Greeting Banner
+              const GreetingBanner(),
+              SizedBox(height: 14 * fontScale),
+
+              // Welcome / Quick Receipt Creation Banner
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(20 * fontScale),
+                padding: EdgeInsets.all(18 * fontScale),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryDark],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -144,24 +144,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$greeting,',
+                      app.tr('heroTitle'),
                       style: TextStyle(
-                        fontSize: 15 * fontScale,
-                        color: Colors.white.withOpacity(0.85),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 4 * fontScale),
-                    Text(
-                      landlordName,
-                      style: TextStyle(
-                        fontSize: 22 * fontScale,
+                        fontSize: 17 * fontScale,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                     ),
+                    SizedBox(height: 4 * fontScale),
+                    Text(
+                      app.tr('heroSubtitle'),
+                      style: TextStyle(
+                        fontSize: 13 * fontScale,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
                     SizedBox(height: 14 * fontScale),
-
                     // Big Action Button: Create Rent Receipt
                     ElderButton(
                       label: app.tr('newReceipt'),
@@ -175,7 +173,109 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              SizedBox(height: 20 * fontScale),
+              SizedBox(height: 14 * fontScale),
+
+              // Quick Fun Tools Row (Calculator & Emergency)
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {
+                        HapticService.selection();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => const RentCalculatorScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14 * fontScale, vertical: 12 * fontScale),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCard : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.calculate_outlined, color: AppColors.primary, size: 20),
+                            ),
+                            SizedBox(width: 8 * fontScale),
+                            Expanded(
+                              child: Text(
+                                app.tr('rentCalculator'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13 * fontScale,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10 * fontScale),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {
+                        HapticService.selection();
+                        EmergencyHelplineSheet.show(context);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14 * fontScale, vertical: 12 * fontScale),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCard : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.warning, size: 20),
+                            ),
+                            SizedBox(width: 8 * fontScale),
+                            Expanded(
+                              child: Text(
+                                app.tr('emergencyHelplines'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13 * fontScale,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 18 * fontScale),
 
               // Overview Title
               Text(
@@ -242,7 +342,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
 
-              SizedBox(height: 24 * fontScale),
+              SizedBox(height: 20 * fontScale),
+
+              // Landlord Milestones & Gamification Badges
+              const AchievementBadgesSection(),
+
+              SizedBox(height: 22 * fontScale),
 
               // Recent Activity Section
               Row(
