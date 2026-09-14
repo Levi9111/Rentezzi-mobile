@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/haptic_service.dart';
+import '../../models/receipt_model.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/receipt_provider.dart';
 import '../../widgets/receipt_card.dart';
@@ -14,11 +16,34 @@ class ReceiptHistoryScreen extends StatefulWidget {
 
 class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
   final _searchController = TextEditingController();
+  String _activeFilter = 'all'; // 'all', 'this_month', 'cash', 'bkash', 'bank'
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<ReceiptModel> _applyFilters(List<ReceiptModel> receipts) {
+    final now = DateTime.now();
+
+    return receipts.where((r) {
+      if (_activeFilter == 'this_month') {
+        if (r.createdAt != null) {
+          return r.createdAt!.year == now.year && r.createdAt!.month == now.month;
+        }
+        return true;
+      } else if (_activeFilter == 'cash') {
+        return r.paymentMethod.toLowerCase() == 'cash';
+      } else if (_activeFilter == 'bkash') {
+        final m = r.paymentMethod.toLowerCase();
+        return m.contains('bkash') || m.contains('nagad') || m.contains('mobile');
+      } else if (_activeFilter == 'bank') {
+        final m = r.paymentMethod.toLowerCase();
+        return m.contains('bank') || m.contains('cheque');
+      }
+      return true;
+    }).toList();
   }
 
   @override
@@ -28,7 +53,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
     final fontScale = app.fontScale;
     final isDark = app.isDarkMode;
 
-    final filteredList = receipts.receipts;
+    final filteredList = _applyFilters(receipts.receipts);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
@@ -45,7 +70,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
           children: [
             // Search Input Bar
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 18 * fontScale, vertical: 12 * fontScale),
+              padding: EdgeInsets.symmetric(horizontal: 18 * fontScale, vertical: 10 * fontScale),
               child: TextField(
                 controller: _searchController,
                 onChanged: (val) => receipts.setSearchQuery(val),
@@ -57,6 +82,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
                       ? IconButton(
                           icon: const Icon(Icons.clear),
                           onPressed: () {
+                            HapticService.selection();
                             _searchController.clear();
                             receipts.setSearchQuery('');
                           },
@@ -65,6 +91,26 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
                 ),
               ),
             ),
+
+            // Filter Chips Bar
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 18 * fontScale),
+              child: Row(
+                children: [
+                  _buildChip('all', app.tr('filterAll'), fontScale),
+                  SizedBox(width: 8 * fontScale),
+                  _buildChip('this_month', app.tr('filterThisMonth'), fontScale),
+                  SizedBox(width: 8 * fontScale),
+                  _buildChip('cash', app.isBengali ? 'নগদ (Cash)' : 'Cash', fontScale),
+                  SizedBox(width: 8 * fontScale),
+                  _buildChip('bkash', 'bKash / Nagad', fontScale),
+                  SizedBox(width: 8 * fontScale),
+                  _buildChip('bank', app.isBengali ? 'ব্যাংক' : 'Bank', fontScale),
+                ],
+              ),
+            ),
+            SizedBox(height: 10 * fontScale),
 
             // Receipts count badge
             Padding(
@@ -82,7 +128,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 10 * fontScale, vertical: 3 * fontScale),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.12),
+                      color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -148,6 +194,28 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChip(String filterKey, String label, double fontScale) {
+    final isSelected = _activeFilter == filterKey;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          HapticService.selection();
+          setState(() {
+            _activeFilter = filterKey;
+          });
+        }
+      },
+      visualDensity: VisualDensity.compact,
+      labelStyle: TextStyle(
+        fontSize: 12.5 * fontScale,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        color: isSelected ? AppColors.primary : null,
       ),
     );
   }
