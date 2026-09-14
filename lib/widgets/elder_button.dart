@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/services/haptic_service.dart';
 import '../providers/app_provider.dart';
 
 class ElderButton extends StatelessWidget {
-  final String label;
+  final String? label;
+  final String? text;
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool isLoading;
@@ -15,7 +17,8 @@ class ElderButton extends StatelessWidget {
 
   const ElderButton({
     super.key,
-    required this.label,
+    this.label,
+    this.text,
     this.icon,
     required this.onPressed,
     this.isLoading = false,
@@ -24,6 +27,15 @@ class ElderButton extends StatelessWidget {
     this.isOutlined = false,
     this.height,
   });
+
+  String get _buttonText => text ?? label ?? '';
+
+  void _handlePress() {
+    HapticService.selection();
+    if (onPressed != null) {
+      onPressed!();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +48,7 @@ class ElderButton extends StatelessWidget {
         width: double.infinity,
         height: minHeight,
         child: OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
+          onPressed: (isLoading || onPressed == null) ? null : _handlePress,
           style: OutlinedButton.styleFrom(
             foregroundColor: foregroundColor ?? AppColors.primary,
             side: BorderSide(
@@ -56,7 +68,7 @@ class ElderButton extends StatelessWidget {
       width: double.infinity,
       height: minHeight,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: (isLoading || onPressed == null) ? null : _handlePress,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor ?? AppColors.primary,
           foregroundColor: foregroundColor ?? Colors.white,
@@ -91,7 +103,7 @@ class ElderButton extends StatelessWidget {
           SizedBox(width: 10 * fontScale),
           Flexible(
             child: Text(
-              label,
+              _buttonText,
               style: TextStyle(
                 fontSize: 16.5 * fontScale,
                 fontWeight: FontWeight.w700,
@@ -105,7 +117,7 @@ class ElderButton extends StatelessWidget {
     }
 
     return Text(
-      label,
+      _buttonText,
       style: TextStyle(
         fontSize: 16.5 * fontScale,
         fontWeight: FontWeight.w700,
