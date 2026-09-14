@@ -413,7 +413,7 @@ class _PropertyCardState extends State<PropertyCard> {
                       tenant: tenant,
                       unitName: unit.name,
                       propertyName: widget.property.name,
-                      rentAmount: tenant.rentAmount,
+                      rentAmount: tenant.rentAmount.toDouble(),
                     );
                   },
                 ),

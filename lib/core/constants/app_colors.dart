@@ -43,4 +43,11 @@ class AppColors {
   static const Color darkTextMuted = Color(0xFF94A3B8);
   static const Color darkBorder = Color(0xFF26334D);
   static const Color darkInputBg = Color(0xFF1F293D);
+
+  // Common aliases
+  static const Color cardBackground = lightCard;
+  static const Color textPrimary = lightTextPrimary;
+  static const Color textSecondary = lightTextSecondary;
+  static const Color textMuted = lightTextMuted;
+  static const Color whatsappGreen = whatsApp;
 }

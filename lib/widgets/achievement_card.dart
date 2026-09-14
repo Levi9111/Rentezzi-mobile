@@ -79,7 +79,7 @@ class AchievementBadgesSection extends StatelessWidget {
     final achievements = _computeAchievements(
       receiptCount: receiptProv.receipts.length,
       propertyCount: propertyProv.properties.length,
-      vacantCount: propertyProv.totalVacantUnits,
+      vacantCount: propertyProv.vacantUnits,
       totalUnits: propertyProv.totalUnits,
     );
 

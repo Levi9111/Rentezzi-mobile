@@ -132,7 +132,7 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                 child: Column(
                   children: [
                     Text(
-                      widget.receipt.unitName,
+                      widget.receipt.unitName ?? '',
                       style: TextStyle(
                         fontSize: 14 * appProv.fontScale,
                         fontWeight: FontWeight.w600,

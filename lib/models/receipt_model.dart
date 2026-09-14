@@ -19,8 +19,12 @@ class ReceiptModel {
   final String? landlordPhone;
   final String? notes;
   final String? pdfUrl;
-  final String receiptLang; // 'en' | 'bn'
+  final String receiptLang;
   final DateTime createdAt;
+
+  String get month => monthYear;
+  num get otherCharges => otherBills ?? 0;
+  String get receiptNumber => id.length > 8 ? id.substring(0, 8).toUpperCase() : id.toUpperCase();
 
   ReceiptModel({
     required this.id,

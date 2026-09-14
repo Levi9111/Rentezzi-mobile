@@ -29,10 +29,7 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
 
     return receipts.where((r) {
       if (_activeFilter == 'this_month') {
-        if (r.createdAt != null) {
-          return r.createdAt!.year == now.year && r.createdAt!.month == now.month;
-        }
-        return true;
+        return r.createdAt.year == now.year && r.createdAt.month == now.month;
       } else if (_activeFilter == 'cash') {
         return r.paymentMethod.toLowerCase() == 'cash';
       } else if (_activeFilter == 'bkash') {

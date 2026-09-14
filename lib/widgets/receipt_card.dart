@@ -26,9 +26,7 @@ class ReceiptCard extends StatelessWidget {
     final fontScale = app.fontScale;
     final isDark = app.isDarkMode;
     final totalFormatted = NumberFormat('#,##,###').format(receipt.totalAmount);
-    final dateFormatted = receipt.createdAt != null
-        ? DateFormat('dd MMM yyyy').format(receipt.createdAt!)
-        : 'N/A';
+    final dateFormatted = DateFormat('dd MMM yyyy').format(receipt.createdAt);
 
     return InkWell(
       onTap: onTap ??

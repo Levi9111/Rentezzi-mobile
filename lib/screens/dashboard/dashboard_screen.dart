@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/haptic_service.dart';
 import '../../providers/app_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/receipt_provider.dart';
 import '../../widgets/achievement_card.dart';

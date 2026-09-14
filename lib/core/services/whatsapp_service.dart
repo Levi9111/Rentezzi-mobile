@@ -70,4 +70,10 @@ Thank you!
       return false;
     }
   }
+
+  static Future<bool> sendReceiptViaWhatsApp({
+    required ReceiptModel receipt,
+    required String tenantPhone,
+    required bool isBn,
+  }) => shareReceiptViaWhatsApp(receipt, overridePhone: tenantPhone, lang: isBn ? 'bn' : 'en');
 }

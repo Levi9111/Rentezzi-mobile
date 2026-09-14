@@ -3,8 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/haptic_service.dart';
-import '../../core/services/pdf_service.dart';
-import '../../core/services/whatsapp_service.dart';
 import '../../models/property_model.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -124,7 +122,6 @@ class _RentFormScreenState extends State<RentFormScreen> {
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
-    final app = context.read<AppProvider>();
     final receiptProvider = context.read<ReceiptProvider>();
 
     final payload = {

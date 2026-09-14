@@ -457,4 +457,6 @@ class PdfService {
       filename: filename,
     );
   }
+
+  static Future<void> printOrShareReceipt(ReceiptModel receipt) => printOrSharePdf(receipt);
 }

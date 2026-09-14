@@ -22,6 +22,7 @@ class AppProvider extends ChangeNotifier {
 
   String get language => _language;
   bool get isBengali => _language == 'bn';
+  bool get isBn => _language == 'bn';
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
   double get fontScale => _fontScale;

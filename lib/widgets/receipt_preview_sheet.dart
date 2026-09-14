@@ -33,11 +33,9 @@ class ReceiptPreviewSheet extends StatelessWidget {
     final isBn = appProv.isBn;
     final isDark = appProv.isDarkMode;
 
-    final dateStr = receipt.paymentDate != null
-        ? DateFormat('dd MMM yyyy').format(receipt.paymentDate!)
-        : (receipt.createdAt != null
-            ? DateFormat('dd MMM yyyy').format(receipt.createdAt!)
-            : 'N/A');
+    final dateStr = receipt.paymentDate.isNotEmpty
+        ? receipt.paymentDate
+        : DateFormat('dd MMM yyyy').format(receipt.createdAt);
 
     return Container(
       constraints: BoxConstraints(
@@ -89,7 +87,7 @@ class ReceiptPreviewSheet extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        receipt.receiptNumber ?? receipt.id.substring(0, 8),
+                        receipt.receiptNumber,
                         style: TextStyle(
                           fontSize: 12 * appProv.fontScale,
                           color: Colors.grey,
@@ -133,12 +131,12 @@ class ReceiptPreviewSheet extends StatelessWidget {
                   _buildRow('Payment Method', receipt.paymentMethod.toUpperCase(), isDark, appProv),
                   const Divider(height: 24),
                   _buildRow('Base Rent', '৳${receipt.rentAmount.round()}', isDark, appProv),
-                  if (receipt.waterBill > 0)
-                    _buildRow('Water Bill', '৳${receipt.waterBill.round()}', isDark, appProv),
-                  if (receipt.gasBill > 0)
-                    _buildRow('Gas Bill', '৳${receipt.gasBill.round()}', isDark, appProv),
-                  if (receipt.otherCharges > 0)
-                    _buildRow('Other Charges', '৳${receipt.otherCharges.round()}', isDark, appProv),
+                  if (receipt.waterBill != null && receipt.waterBill! > 0)
+                    _buildRow('Water Bill', '৳${receipt.waterBill!.round()}', isDark, appProv),
+                  if (receipt.gasBill != null && receipt.gasBill! > 0)
+                    _buildRow('Gas Bill', '৳${receipt.gasBill!.round()}', isDark, appProv),
+                  if (receipt.otherBills != null && receipt.otherBills! > 0)
+                    _buildRow('Other Charges', '৳${receipt.otherBills!.round()}', isDark, appProv),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

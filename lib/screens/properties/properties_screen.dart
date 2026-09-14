@@ -156,17 +156,17 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           : '',
     );
     final waterController = TextEditingController(
-      text: (currentTenant?.waterBill != null && currentTenant!.waterBill > 0)
+      text: (currentTenant?.waterBill != null && currentTenant!.waterBill! > 0)
           ? currentTenant.waterBill.toString()
           : '',
     );
     final gasController = TextEditingController(
-      text: (currentTenant?.gasBill != null && currentTenant!.gasBill > 0)
+      text: (currentTenant?.gasBill != null && currentTenant!.gasBill! > 0)
           ? currentTenant.gasBill.toString()
           : '',
     );
     final otherController = TextEditingController(
-      text: (currentTenant?.otherBills != null && currentTenant!.otherBills > 0)
+      text: (currentTenant?.otherBills != null && currentTenant!.otherBills! > 0)
           ? currentTenant.otherBills.toString()
           : '',
     );

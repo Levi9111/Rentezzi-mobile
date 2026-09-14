@@ -169,12 +169,8 @@ class AppTranslations {
       'whatsappReceiptThankYou': 'Thank you!',
 
       // Fun & Easy Enhancements
-      'goodMorning': 'Good Morning',
-      'goodAfternoon': 'Good Afternoon',
-      'goodEvening': 'Good Evening',
       'goodNight': 'Good Night',
       'todaySummary': 'Today\'s Summary',
-      'welcomeBack': 'Welcome back, Landlord!',
       'landlordMilestones': 'Landlord Milestones & Badges',
       'levelSuper': 'Master Landlord 🏆',
       'viewAllBadges': 'View All Badges',
@@ -208,7 +204,6 @@ class AppTranslations {
       'filterAll': 'All Units',
       'filterThisMonth': 'This Month',
       'quickPreview': 'Quick Preview',
-      'quickActions': 'Quick Actions',
       'hapticFeedback': 'Vibration & Touch Feedback',
       'hapticFeedbackDesc': 'Feel subtle vibration on taps and buttons',
     },
@@ -381,12 +376,8 @@ class AppTranslations {
       'whatsappReceiptThankYou': 'ধন্যবাদ!',
 
       // Fun & Easy Enhancements
-      'goodMorning': 'শুভ সকাল',
-      'goodAfternoon': 'শুভ অপরাহ্ন',
-      'goodEvening': 'শুভ সন্ধ্যা',
       'goodNight': 'শুভ রাত্রি',
       'todaySummary': 'আজকের সংক্ষিপ্ত বিবরণ',
-      'welcomeBack': 'স্বাগতম, বাড়িওয়ালা সাহেব!',
       'landlordMilestones': 'বাড়িওয়ালার অর্জন ও ব্যাজ',
       'levelSuper': 'সেরা বাড়িওয়ালা 🏆',
       'viewAllBadges': 'সব ব্যাজ দেখুন',
@@ -420,7 +411,6 @@ class AppTranslations {
       'filterAll': 'সব ইউনিট',
       'filterThisMonth': 'এই মাসের',
       'quickPreview': 'দ্রুত প্রিভিউ',
-      'quickActions': 'দ্রুত অ্যাকশন',
       'hapticFeedback': 'স্পর্শে ভাইব্রেশন প্রতিক্রিয়া',
       'hapticFeedbackDesc': 'বোতাম টিপলে হালকা ভাইব্রেশন অনুভূত হবে',
     },
