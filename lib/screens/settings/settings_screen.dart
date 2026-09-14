@@ -7,6 +7,9 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/elder_button.dart';
 import '../../widgets/elder_text_field.dart';
 import '../../widgets/emergency_sheet.dart';
+import '../../widgets/rentezzi_logo.dart';
+import '../../widgets/server_settings_dialog.dart';
+import '../../core/services/api_service.dart';
 import '../auth/login_screen.dart';
 import '../tools/rent_calculator_screen.dart';
 import 'legal_screen.dart';
@@ -455,14 +458,56 @@ class SettingsScreen extends StatelessWidget {
                   },
                 ),
                 const Divider(height: 1),
-                Padding(
-                  padding: EdgeInsets.only(top: 10 * fontScale),
-                  child: Text(
-                    '${app.tr('brand')} — ${app.tr('version')}',
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.dns_rounded),
+                  title: Text(
+                    'Server Configuration & Ping',
+                    style: TextStyle(fontSize: 15.5 * fontScale, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    ApiService.baseUrl,
                     style: TextStyle(
-                      fontSize: 13 * fontScale,
+                      fontSize: 12 * fontScale,
                       color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    HapticService.selection();
+                    ServerSettingsDialog.show(context);
+                  },
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: EdgeInsets.only(top: 14 * fontScale),
+                  child: Row(
+                    children: [
+                      RentezziLogo(size: 38 * fontScale),
+                      SizedBox(width: 12 * fontScale),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rentezzi Landlord',
+                            style: TextStyle(
+                              fontSize: 14 * fontScale,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                          Text(
+                            app.tr('version'),
+                            style: TextStyle(
+                              fontSize: 12 * fontScale,
+                              color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],

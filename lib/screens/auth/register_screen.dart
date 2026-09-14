@@ -6,6 +6,7 @@ import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/elder_button.dart';
 import '../../widgets/elder_text_field.dart';
+import '../../widgets/rentezzi_logo.dart';
 import '../main_navigation_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -213,6 +214,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Center(
+            child: RentezziLogo(
+              size: 72 * fontScale,
+              useHero: false,
+            ),
+          ),
+          SizedBox(height: 14 * fontScale),
           Text(
             app.tr('signUp'),
             textAlign: TextAlign.center,

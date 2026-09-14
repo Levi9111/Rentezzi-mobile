@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -22,11 +23,77 @@ class ApiException implements Exception {
 class ApiService {
   static final http.Client _client = http.Client();
   static bool _isRefreshing = false;
+  static const Duration _timeoutDuration = Duration(seconds: 35);
 
   static String get baseUrl {
     final custom = StorageService.getCustomBaseUrl();
-    if (custom != null && custom.isNotEmpty) return custom;
+    if (custom != null && custom.trim().isNotEmpty) return custom.trim();
     return ApiEndpoints.baseUrl;
+  }
+
+  static Future<void> setBaseUrl(String url) async {
+    await StorageService.saveBaseUrl(url.trim());
+  }
+
+  static Future<void> resetBaseUrl() async {
+    await StorageService.saveBaseUrl('');
+  }
+
+  /// Ping health check endpoint to test server connectivity and measure latency
+  static Future<Map<String, dynamic>> checkHealth([String? testUrl]) async {
+    final targetBase = (testUrl != null && testUrl.trim().isNotEmpty)
+        ? testUrl.trim()
+        : baseUrl;
+    
+    // Normalise base to root url for /health
+    String healthUrl;
+    if (targetBase.endsWith('/api/v1')) {
+      healthUrl = '${targetBase.substring(0, targetBase.length - 7)}/health';
+    } else if (targetBase.endsWith('/')) {
+      healthUrl = '${targetBase}health';
+    } else {
+      healthUrl = '$targetBase/health';
+    }
+
+    final stopwatch = Stopwatch()..start();
+    try {
+      final res = await _client
+          .get(Uri.parse(healthUrl))
+          .timeout(const Duration(seconds: 15));
+      stopwatch.stop();
+
+      if (res.statusCode == 200) {
+        return {
+          'success': true,
+          'latencyMs': stopwatch.elapsedMilliseconds,
+          'message': 'Connected (${stopwatch.elapsedMilliseconds} ms)',
+        };
+      } else {
+        return {
+          'success': false,
+          'latencyMs': stopwatch.elapsedMilliseconds,
+          'message': 'Server responded with status ${res.statusCode}',
+        };
+      }
+    } on TimeoutException {
+      return {
+        'success': false,
+        'latencyMs': null,
+        'message': 'Connection timed out (15s). Cloud instance might be waking up.',
+      };
+    } on SocketException catch (e) {
+      return {
+        'success': false,
+        'latencyMs': null,
+        'message': 'Connection refused or unreachable: ${e.osError?.message ?? e.message}',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'latencyMs': null,
+        'message': 'Error: $e',
+      };
+    }
   }
 
   static Map<String, String> _getHeaders({bool isAuth = true}) {
@@ -47,7 +114,9 @@ class ApiService {
   static Future<dynamic> get(String path, {bool requireAuth = true}) async {
     return _sendWithRetry(() async {
       final url = Uri.parse('$baseUrl$path');
-      final res = await _client.get(url, headers: _getHeaders(isAuth: requireAuth));
+      final res = await _client
+          .get(url, headers: _getHeaders(isAuth: requireAuth))
+          .timeout(_timeoutDuration);
       return _processResponse(res);
     });
   }
@@ -60,11 +129,13 @@ class ApiService {
   }) async {
     return _sendWithRetry(() async {
       final url = Uri.parse('$baseUrl$path');
-      final res = await _client.post(
-        url,
-        headers: _getHeaders(isAuth: requireAuth),
-        body: body != null ? jsonEncode(body) : null,
-      );
+      final res = await _client
+          .post(
+            url,
+            headers: _getHeaders(isAuth: requireAuth),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(_timeoutDuration);
       return _processResponse(res);
     });
   }
@@ -77,11 +148,13 @@ class ApiService {
   }) async {
     return _sendWithRetry(() async {
       final url = Uri.parse('$baseUrl$path');
-      final res = await _client.patch(
-        url,
-        headers: _getHeaders(isAuth: requireAuth),
-        body: body != null ? jsonEncode(body) : null,
-      );
+      final res = await _client
+          .patch(
+            url,
+            headers: _getHeaders(isAuth: requireAuth),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(_timeoutDuration);
       return _processResponse(res);
     });
   }
@@ -94,11 +167,13 @@ class ApiService {
   }) async {
     return _sendWithRetry(() async {
       final url = Uri.parse('$baseUrl$path');
-      final res = await _client.put(
-        url,
-        headers: _getHeaders(isAuth: requireAuth),
-        body: body != null ? jsonEncode(body) : null,
-      );
+      final res = await _client
+          .put(
+            url,
+            headers: _getHeaders(isAuth: requireAuth),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(_timeoutDuration);
       return _processResponse(res);
     });
   }
@@ -111,11 +186,13 @@ class ApiService {
   }) async {
     return _sendWithRetry(() async {
       final url = Uri.parse('$baseUrl$path');
-      final res = await _client.delete(
-        url,
-        headers: _getHeaders(isAuth: requireAuth),
-        body: body != null ? jsonEncode(body) : null,
-      );
+      final res = await _client
+          .delete(
+            url,
+            headers: _getHeaders(isAuth: requireAuth),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(_timeoutDuration);
       return _processResponse(res);
     });
   }
@@ -135,9 +212,15 @@ class ApiService {
         }
       }
       rethrow;
-    } on SocketException {
+    } on TimeoutException {
       throw ApiException(
-        message: 'Unable to connect to server. Please check your internet connection.',
+        message: 'Server took too long to respond. If waking up from sleep, please try again in a few moments.',
+        statusCode: 408,
+      );
+    } on SocketException catch (e) {
+      final errorDetail = e.osError?.message ?? e.message;
+      throw ApiException(
+        message: 'Unable to connect to server ($baseUrl). Please check internet connection or server status. ($errorDetail)',
         statusCode: 0,
       );
     } catch (e) {
@@ -154,11 +237,13 @@ class ApiService {
     _isRefreshing = true;
     try {
       final url = Uri.parse('$baseUrl${ApiEndpoints.refreshToken}');
-      final res = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      final res = await _client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);

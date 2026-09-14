@@ -5,6 +5,7 @@ import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
 import 'auth/login_screen.dart';
 import 'main_navigation_screen.dart';
+import '../widgets/rentezzi_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -48,31 +49,9 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // App Logo Icon
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.receipt_long_rounded,
-                  size: 52,
-                  color: Colors.white,
-                ),
-              ),
+            const RentezziLogo(
+              size: 104,
+              useHero: true,
             ),
             const SizedBox(height: 24),
 

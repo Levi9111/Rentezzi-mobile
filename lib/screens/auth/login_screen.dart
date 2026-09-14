@@ -5,6 +5,8 @@ import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/elder_button.dart';
 import '../../widgets/elder_text_field.dart';
+import '../../widgets/rentezzi_logo.dart';
+import '../../widgets/server_settings_dialog.dart';
 import '../main_navigation_screen.dart';
 import 'change_password_screen.dart';
 import 'register_screen.dart';
@@ -58,13 +60,25 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
     } else if (mounted && auth.errorMessage != null) {
+      final isNetwork = auth.errorMessage!.toLowerCase().contains('connect') ||
+          auth.errorMessage!.toLowerCase().contains('internet') ||
+          auth.errorMessage!.toLowerCase().contains('server');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             auth.errorMessage!,
-            style: TextStyle(fontSize: 15 * app.fontScale),
+            style: TextStyle(fontSize: 14 * app.fontScale),
           ),
           backgroundColor: AppColors.destructive,
+          duration: const Duration(seconds: 5),
+          action: isNetwork
+              ? SnackBarAction(
+                  label: 'Server Settings',
+                  textColor: Colors.white,
+                  onPressed: () => ServerSettingsDialog.show(context),
+                )
+              : null,
         ),
       );
     }
@@ -83,6 +97,12 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Server settings / ping tool
+          IconButton(
+            icon: Icon(Icons.dns_rounded, size: 22 * fontScale, color: AppColors.primary),
+            tooltip: 'Server Settings & Ping',
+            onPressed: () => ServerSettingsDialog.show(context),
+          ),
           // One-tap Language Switch Chip
           Padding(
             padding: EdgeInsets.only(right: 16 * fontScale),
@@ -114,33 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Brand Icon
+                    // Official Brand Logo
                     Center(
-                      child: Container(
-                        width: 72 * fontScale,
-                        height: 72 * fontScale,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.accent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.receipt_long_rounded,
-                            size: 38 * fontScale,
-                            color: Colors.white,
-                          ),
-                        ),
+                      child: RentezziLogo(
+                        size: 84 * fontScale,
+                        useHero: true,
                       ),
                     ),
                     SizedBox(height: 18 * fontScale),
