@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/haptic_service.dart';
 import '../../core/services/pdf_service.dart';
 import '../../core/services/whatsapp_service.dart';
 import '../../models/property_model.dart';
@@ -9,6 +10,7 @@ import '../../providers/app_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/receipt_provider.dart';
+import '../../widgets/celebration_dialog.dart';
 import '../../widgets/elder_button.dart';
 import '../../widgets/elder_text_field.dart';
 
@@ -150,26 +152,13 @@ class _RentFormScreenState extends State<RentFormScreen> {
     final createdReceipt = await receiptProvider.createReceipt(payload);
 
     if (createdReceipt != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            app.tr('receiptCreated'),
-            style: TextStyle(fontSize: 16 * app.fontScale),
-          ),
-          backgroundColor: AppColors.success,
-        ),
+      HapticService.success();
+      // Show celebratory congratulations modal
+      await CelebrationDialog.show(
+        context,
+        receipt: createdReceipt,
+        tenantPhone: _tenantPhoneController.text.trim(),
       );
-
-      // Launch WhatsApp if requested
-      if (_shareWhatsApp && _tenantPhoneController.text.isNotEmpty) {
-        await WhatsAppService.shareReceiptViaWhatsApp(
-          createdReceipt,
-          lang: _receiptLang,
-        );
-      }
-
-      // Preview/Print PDF
-      await PdfService.printOrSharePdf(createdReceipt);
     } else if (mounted && receiptProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -268,9 +257,9 @@ class _RentFormScreenState extends State<RentFormScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 12 * fontScale, vertical: 8 * fontScale),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.12),
+                        color: AppColors.accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -387,9 +376,9 @@ class _RentFormScreenState extends State<RentFormScreen> {
                   Container(
                     padding: EdgeInsets.all(16 * fontScale),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.08),
+                      color: AppColors.accent.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.accent.withOpacity(0.25)),
+                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
