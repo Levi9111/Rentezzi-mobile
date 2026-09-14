@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/haptic_service.dart';
 import '../../models/property_model.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/property_provider.dart';
@@ -26,6 +27,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   void _showAddPropertyDialog() {
+    HapticService.selection();
     final app = context.read<AppProvider>();
     final nameController = TextEditingController();
     final addressController = TextEditingController();
@@ -62,18 +64,23 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(app.tr('cancel'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.trim().isEmpty || addressController.text.trim().isEmpty) return;
+              HapticService.medium();
               Navigator.pop(ctx);
               final success = await context.read<PropertyProvider>().createProperty(
                     name: nameController.text.trim(),
                     address: addressController.text.trim(),
                   );
               if (success && mounted) {
+                HapticService.success();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(app.tr('propertyAdded')), backgroundColor: AppColors.success),
                 );
@@ -87,6 +94,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   void _showAddUnitDialog(PropertyModel property) {
+    HapticService.selection();
     final app = context.read<AppProvider>();
     final unitNameController = TextEditingController();
 
@@ -108,17 +116,24 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(app.tr('cancel'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (unitNameController.text.trim().isEmpty) return;
+              HapticService.medium();
               Navigator.pop(ctx);
-              await context.read<PropertyProvider>().addUnit(
+              final success = await context.read<PropertyProvider>().addUnit(
                     propertyId: property.id,
                     name: unitNameController.text.trim(),
                   );
+              if (success) {
+                HapticService.success();
+              }
             },
             child: Text(app.tr('confirm'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
@@ -128,6 +143,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   void _showTenantDialog(PropertyModel property, UnitModel unit) {
+    HapticService.selection();
     final app = context.read<AppProvider>();
     final isEdit = unit.isOccupied;
     final currentTenant = unit.tenant;
@@ -140,17 +156,17 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           : '',
     );
     final waterController = TextEditingController(
-      text: (currentTenant?.waterBill != null && currentTenant!.waterBill! > 0)
+      text: (currentTenant?.waterBill != null && currentTenant!.waterBill > 0)
           ? currentTenant.waterBill.toString()
           : '',
     );
     final gasController = TextEditingController(
-      text: (currentTenant?.gasBill != null && currentTenant!.gasBill! > 0)
+      text: (currentTenant?.gasBill != null && currentTenant!.gasBill > 0)
           ? currentTenant.gasBill.toString()
           : '',
     );
     final otherController = TextEditingController(
-      text: (currentTenant?.otherBills != null && currentTenant!.otherBills! > 0)
+      text: (currentTenant?.otherBills != null && currentTenant!.otherBills > 0)
           ? currentTenant.otherBills.toString()
           : '',
     );
@@ -159,11 +175,8 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          isEdit ? app.tr('editTenant') : app.tr('addTenant'),
-          style: TextStyle(
-            fontSize: 18.5 * app.fontScale,
-            fontWeight: FontWeight.w800,
-          ),
+          isEdit ? '${app.tr('editTenant')} (${unit.name})' : '${app.tr('addTenant')} (${unit.name})',
+          style: TextStyle(fontSize: 18 * app.fontScale, fontWeight: FontWeight.w800),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -177,19 +190,19 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
               ),
               SizedBox(height: 12 * app.fontScale),
               ElderTextField(
-                label: app.tr('tenantPhone'),
+                label: app.tr('phone'),
                 hintText: app.tr('tenantPhoneHint'),
                 controller: phoneController,
                 keyboardType: TextInputType.phone,
-                prefixIcon: Icons.phone_android_outlined,
+                prefixIcon: Icons.phone_outlined,
               ),
               SizedBox(height: 12 * app.fontScale),
               ElderTextField(
                 label: app.tr('rentAmount'),
-                hintText: 'e.g. 15000',
+                hintText: '15000',
                 controller: rentController,
                 keyboardType: TextInputType.number,
-                prefixIcon: Icons.attach_money,
+                prefixIcon: Icons.money,
               ),
               SizedBox(height: 12 * app.fontScale),
               Row(
@@ -225,12 +238,16 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(app.tr('cancel'), style: TextStyle(fontSize: 15 * app.fontScale)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.trim().isEmpty || phoneController.text.trim().isEmpty) return;
+              HapticService.medium();
               Navigator.pop(ctx);
 
               final newTenant = TenantModel(
@@ -249,6 +266,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
                   );
 
               if (success && mounted) {
+                HapticService.success();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(app.tr('tenantAdded')), backgroundColor: AppColors.success),
                 );
