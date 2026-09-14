@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/services/haptic_service.dart';
 import '../core/services/pdf_service.dart';
 import '../core/services/whatsapp_service.dart';
 import '../models/receipt_model.dart';
 import '../providers/app_provider.dart';
 import '../providers/receipt_provider.dart';
+import 'receipt_preview_sheet.dart';
 
 class ReceiptCard extends StatelessWidget {
   final ReceiptModel receipt;
@@ -24,10 +26,16 @@ class ReceiptCard extends StatelessWidget {
     final fontScale = app.fontScale;
     final isDark = app.isDarkMode;
     final totalFormatted = NumberFormat('#,##,###').format(receipt.totalAmount);
-    final dateFormatted = DateFormat('dd MMM yyyy').format(receipt.createdAt);
+    final dateFormatted = receipt.createdAt != null
+        ? DateFormat('dd MMM yyyy').format(receipt.createdAt!)
+        : 'N/A';
 
     return InkWell(
-      onTap: onTap ?? () => PdfService.printOrSharePdf(receipt),
+      onTap: onTap ??
+          () {
+            HapticService.selection();
+            ReceiptPreviewSheet.show(context, receipt);
+          },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: EdgeInsets.only(bottom: 12 * fontScale),
@@ -41,7 +49,7 @@ class ReceiptCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -71,7 +79,7 @@ class ReceiptCard extends StatelessWidget {
                       ),
                       SizedBox(height: 3 * fontScale),
                       Text(
-                        '${receipt.propertyName ?? ''} ${receipt.unitName != null ? '• ${receipt.unitName}' : ''}',
+                        '${receipt.propertyName} • ${receipt.unitName}',
                         style: TextStyle(
                           fontSize: 13.5 * fontScale,
                           fontWeight: FontWeight.w500,
@@ -89,14 +97,14 @@ class ReceiptCard extends StatelessWidget {
                     vertical: 4 * fontScale,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Text(
-                    receipt.monthYear,
+                    receipt.month,
                     style: TextStyle(
                       fontSize: 12.5 * fontScale,
                       fontWeight: FontWeight.w700,
@@ -155,11 +163,14 @@ class ReceiptCard extends StatelessWidget {
                     height: 44 * fontScale,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final success = await WhatsAppService.shareReceiptViaWhatsApp(
-                          receipt,
-                          lang: app.language,
-                        );
-                        if (!success && context.mounted) {
+                        HapticService.selection();
+                        if (receipt.tenantPhone != null && receipt.tenantPhone!.isNotEmpty) {
+                          await WhatsAppService.sendReceiptViaWhatsApp(
+                            receipt: receipt,
+                            tenantPhone: receipt.tenantPhone!,
+                            isBn: app.isBn,
+                          );
+                        } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(app.tr('tenantPhoneHint')),
@@ -195,7 +206,10 @@ class ReceiptCard extends StatelessWidget {
                 SizedBox(
                   height: 44 * fontScale,
                   child: OutlinedButton.icon(
-                    onPressed: () => PdfService.printOrSharePdf(receipt),
+                    onPressed: () {
+                      HapticService.selection();
+                      PdfService.printOrShareReceipt(receipt);
+                    },
                     icon: Icon(Icons.picture_as_pdf_outlined, size: 18 * fontScale),
                     label: Text(
                       app.tr('downloadPdf'),
@@ -221,7 +235,10 @@ class ReceiptCard extends StatelessWidget {
                   height: 44 * fontScale,
                   width: 44 * fontScale,
                   child: IconButton(
-                    onPressed: () => _confirmDelete(context, app),
+                    onPressed: () {
+                      HapticService.selection();
+                      _confirmDelete(context, app);
+                    },
                     icon: Icon(
                       Icons.delete_outline,
                       size: 20 * fontScale,
@@ -255,7 +272,10 @@ class ReceiptCard extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              HapticService.light();
+              Navigator.pop(ctx);
+            },
             child: Text(
               app.tr('cancel'),
               style: TextStyle(fontSize: 15 * app.fontScale),
@@ -263,6 +283,7 @@ class ReceiptCard extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              HapticService.medium();
               Navigator.pop(ctx);
               await context.read<ReceiptProvider>().deleteReceipt(receipt.id);
             },
