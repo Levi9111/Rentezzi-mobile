@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/services/haptic_service.dart';
 import '../models/property_model.dart';
 import '../providers/app_provider.dart';
 import '../providers/property_provider.dart';
+import 'tenant_quick_actions.dart';
 
 class PropertyCard extends StatefulWidget {
   final PropertyModel property;
@@ -24,6 +26,7 @@ class PropertyCard extends StatefulWidget {
 
 class _PropertyCardState extends State<PropertyCard> {
   bool _isExpanded = false;
+  String _unitFilter = 'all'; // 'all', 'occupied', 'vacant'
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +34,12 @@ class _PropertyCardState extends State<PropertyCard> {
     final fontScale = app.fontScale;
     final isDark = app.isDarkMode;
     final prop = widget.property;
+
+    final filteredUnits = prop.units.where((u) {
+      if (_unitFilter == 'occupied') return u.isOccupied;
+      if (_unitFilter == 'vacant') return !u.isOccupied;
+      return true;
+    }).toList();
 
     return Container(
       margin: EdgeInsets.only(bottom: 14 * fontScale),
@@ -43,7 +52,7 @@ class _PropertyCardState extends State<PropertyCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -79,7 +88,7 @@ class _PropertyCardState extends State<PropertyCard> {
                             children: [
                               Icon(
                                 Icons.location_on_outlined,
-                                size: 16 * fontScale,
+                                size: 15 * fontScale,
                                 color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                               ),
                               SizedBox(width: 4 * fontScale),
@@ -87,10 +96,9 @@ class _PropertyCardState extends State<PropertyCard> {
                                 child: Text(
                                   prop.address,
                                   style: TextStyle(
-                                    fontSize: 14 * fontScale,
+                                    fontSize: 13.5 * fontScale,
                                     color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                                   ),
-                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -105,84 +113,90 @@ class _PropertyCardState extends State<PropertyCard> {
                         color: AppColors.destructive,
                         size: 22 * fontScale,
                       ),
-                      onPressed: () => _confirmDeleteProperty(context, app),
+                      onPressed: () {
+                        HapticService.selection();
+                        _confirmDeleteProperty(context, app);
+                      },
                       tooltip: app.tr('deleteProperty'),
                     ),
                   ],
                 ),
                 SizedBox(height: 12 * fontScale),
 
-                // Units Badges and Expand Toggle
+                // Stats Row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Wrap(
-                      spacing: 8 * fontScale,
-                      children: [
-                        // Total Units Chip
-                        _buildBadge(
-                          label: '${prop.totalUnits} ${app.tr('units')}',
-                          color: AppColors.primary,
-                          fontScale: fontScale,
-                        ),
-                        // Occupied Chip
-                        _buildBadge(
-                          label: '${prop.occupiedUnits} ${app.tr('occupied')}',
-                          color: AppColors.accent,
-                          fontScale: fontScale,
-                        ),
-                        // Vacant Chip
-                        if (prop.vacantUnits > 0)
-                          _buildBadge(
-                            label: '${prop.vacantUnits} ${app.tr('vacant')}',
-                            color: AppColors.warning,
-                            fontScale: fontScale,
-                          ),
-                      ],
+                    _buildBadge(
+                      label: '${prop.totalUnits} ${app.tr('units')}',
+                      color: AppColors.primary,
+                      fontScale: fontScale,
                     ),
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          _isExpanded = !_isExpanded;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8 * fontScale,
-                          vertical: 4 * fontScale,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              _isExpanded ? 'Hide' : 'View',
-                              style: TextStyle(
-                                fontSize: 13.5 * fontScale,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            Icon(
-                              _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                              size: 18 * fontScale,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
+                    SizedBox(width: 8 * fontScale),
+                    _buildBadge(
+                      label: '${prop.occupiedUnits} ${app.tr('occupied')}',
+                      color: AppColors.accent,
+                      fontScale: fontScale,
+                    ),
+                    SizedBox(width: 8 * fontScale),
+                    _buildBadge(
+                      label: '${prop.vacantUnits} ${app.tr('vacant')}',
+                      color: prop.vacantUnits > 0 ? AppColors.warning : AppColors.accent,
+                      fontScale: fontScale,
                     ),
                   ],
+                ),
+                SizedBox(height: 8 * fontScale),
+
+                // Expand / Collapse Toggle
+                InkWell(
+                  onTap: () {
+                    HapticService.selection();
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4 * fontScale),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _isExpanded ? app.tr('hideUnits') : app.tr('viewUnits'),
+                          style: TextStyle(
+                            fontSize: 13.5 * fontScale,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        Icon(
+                          _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          color: AppColors.primary,
+                          size: 20 * fontScale,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Collapsible Unit Details
+          // Units Section (Collapsible)
           if (_isExpanded) ...[
-            const Divider(height: 1),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            ),
             Container(
-              padding: EdgeInsets.all(14 * fontScale),
-              color: isDark ? AppColors.darkInputBg.withOpacity(0.5) : AppColors.lightBg,
+              padding: EdgeInsets.all(16 * fontScale),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkInputBg.withValues(alpha: 0.5) : AppColors.lightBg,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -198,7 +212,10 @@ class _PropertyCardState extends State<PropertyCard> {
                         ),
                       ),
                       TextButton.icon(
-                        onPressed: widget.onAddUnit,
+                        onPressed: () {
+                          HapticService.selection();
+                          widget.onAddUnit();
+                        },
                         icon: Icon(Icons.add_circle_outline, size: 18 * fontScale),
                         label: Text(
                           app.tr('addUnit'),
@@ -211,14 +228,29 @@ class _PropertyCardState extends State<PropertyCard> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8 * fontScale),
+                  // Filter chips for units
+                  if (prop.units.isNotEmpty) ...[
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip('all', app.tr('filterAll'), fontScale),
+                          SizedBox(width: 6 * fontScale),
+                          _buildFilterChip('occupied', app.tr('filterOccupied'), fontScale),
+                          SizedBox(width: 6 * fontScale),
+                          _buildFilterChip('vacant', app.tr('filterVacant'), fontScale),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10 * fontScale),
+                  ],
 
-                  if (prop.units.isEmpty)
+                  if (filteredUnits.isEmpty)
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 12 * fontScale),
                       child: Center(
                         child: Text(
-                          app.tr('noUnitsYet'),
+                          prop.units.isEmpty ? app.tr('noUnitsYet') : 'No matching units found',
                           style: TextStyle(
                             fontSize: 14 * fontScale,
                             color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
@@ -227,7 +259,7 @@ class _PropertyCardState extends State<PropertyCard> {
                       ),
                     )
                   else
-                    ...prop.units.map((unit) => _buildUnitItem(context, unit, app, fontScale, isDark)),
+                    ...filteredUnits.map((unit) => _buildUnitItem(context, unit, app, fontScale, isDark)),
                 ],
               ),
             ),
@@ -237,13 +269,35 @@ class _PropertyCardState extends State<PropertyCard> {
     );
   }
 
+  Widget _buildFilterChip(String filterKey, String label, double fontScale) {
+    final isSelected = _unitFilter == filterKey;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          HapticService.selection();
+          setState(() {
+            _unitFilter = filterKey;
+          });
+        }
+      },
+      visualDensity: VisualDensity.compact,
+      labelStyle: TextStyle(
+        fontSize: 11.5 * fontScale,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        color: isSelected ? AppColors.primary : null,
+      ),
+    );
+  }
+
   Widget _buildBadge({required String label, required Color color, required double fontScale}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8 * fontScale, vertical: 3 * fontScale),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
@@ -310,7 +364,10 @@ class _PropertyCardState extends State<PropertyCard> {
                   SizedBox(width: 4 * fontScale),
                   IconButton(
                     icon: Icon(Icons.close, size: 16 * fontScale, color: AppColors.destructive),
-                    onPressed: () => _confirmDeleteUnit(context, unit, app),
+                    onPressed: () {
+                      HapticService.selection();
+                      _confirmDeleteUnit(context, unit, app);
+                    },
                     tooltip: app.tr('deleteUnit'),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -321,20 +378,46 @@ class _PropertyCardState extends State<PropertyCard> {
 
           if (hasTenant && tenant != null) ...[
             SizedBox(height: 6 * fontScale),
-            Text(
-              '${app.tr('tenantName')}: ${tenant.name}',
-              style: TextStyle(
-                fontSize: 14 * fontScale,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
-            ),
-            Text(
-              '${app.tr('phone')}: ${tenant.phone} • ৳${NumberFormat('#,##,###').format(tenant.rentAmount)}',
-              style: TextStyle(
-                fontSize: 13 * fontScale,
-                color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${app.tr('tenantName')}: ${tenant.name}',
+                        style: TextStyle(
+                          fontSize: 14 * fontScale,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        ),
+                      ),
+                      Text(
+                        '${app.tr('phone')}: ${tenant.phone} • ৳${NumberFormat('#,##,###').format(tenant.rentAmount)}',
+                        style: TextStyle(
+                          fontSize: 13 * fontScale,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Quick Call/Actions button
+                IconButton(
+                  icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.success),
+                  tooltip: app.tr('callTenant'),
+                  onPressed: () {
+                    HapticService.medium();
+                    TenantQuickActionsSheet.show(
+                      context,
+                      tenant: tenant,
+                      unitName: unit.name,
+                      propertyName: widget.property.name,
+                      rentAmount: tenant.rentAmount,
+                    );
+                  },
+                ),
+              ],
             ),
           ],
 
@@ -344,7 +427,10 @@ class _PropertyCardState extends State<PropertyCard> {
             children: [
               if (hasTenant) ...[
                 TextButton(
-                  onPressed: () => _confirmClearTenant(context, unit, app),
+                  onPressed: () {
+                    HapticService.selection();
+                    _confirmClearTenant(context, unit, app);
+                  },
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.destructive,
                     visualDensity: VisualDensity.compact,
@@ -357,7 +443,10 @@ class _PropertyCardState extends State<PropertyCard> {
                 SizedBox(width: 6 * fontScale),
               ],
               OutlinedButton.icon(
-                onPressed: () => widget.onEditTenant(unit),
+                onPressed: () {
+                  HapticService.selection();
+                  widget.onEditTenant(unit);
+                },
                 icon: Icon(
                   hasTenant ? Icons.edit_outlined : Icons.person_add_alt_1_outlined,
                   size: 15 * fontScale,
